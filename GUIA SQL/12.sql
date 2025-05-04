@@ -7,7 +7,7 @@ ordenarse de mayor a menor por monto vendido del producto.*/
 SELECT prod_codigo, prod_detalle, COUNT(DISTINCT fact_cliente), AVG(isnull(item_precio, 0)), 
 																							(SELECT COUNT(depo_codigo)
 																							 FROM Deposito JOIN Stock ON stoc_deposito = depo_codigo
-																							 WHERE stoc_deposito > 0 AND stoc_producto = prod_codigo),
+																							 WHERE stoc_cantidad > 0 AND stoc_producto = prod_codigo),
 																							(SELECT SUM(isnull(stoc_cantidad, 0))
 																							 FROM Stock
 																							 WHERE stoc_producto = prod_codigo)
