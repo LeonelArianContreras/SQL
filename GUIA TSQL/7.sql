@@ -11,7 +11,7 @@ CREATE TABLE VentasEj7 (
 )
 GO
 
-CREATE PROCEDURE ej7 @fechaInicio SMALLDATETIME, @fechaFin SMALLDATETIME
+ALTER PROCEDURE ej7 @fechaInicio SMALLDATETIME, @fechaFin SMALLDATETIME
 AS
 BEGIN
 	DECLARE @producto VARCHAR(10),
@@ -74,3 +74,33 @@ EXEC dbo.ej7 @fechaInicio = '2009-12-12', @fechaFin = '2014-12-12'
 END
 
 SELECT * FROM VentasEj7
+
+
+/*7. Hacer un procedimiento que dadas dos fechas complete la tabla Ventas. Debe
+insertar una línea por cada artículo con los movimientos de stock generados por
+las ventas entre esas fechas. La tabla se encuentra creada y vacía.*/
+GO
+CREATE PROCEDURE ej7_v2 @fechaInicio SMALLDATETIME, @fechaFin SMALLDATETIME
+AS
+BEGIN
+	INSERT INTO dbo.VentasEj7 (
+		articulo,
+		detalle,
+		cant_movimientos,
+		precio,
+		ganancia
+	)
+	SELECT prod_codigo,
+		   prod_detalle,
+		   COUNT(item_producto),
+			AVG(item_precio),
+			SUM((item_precio - prod_precio) * item_cantidad)
+	FROM Producto
+	JOIN Item_Factura ON prod_codigo = item_producto
+	JOIN Factura ON item_tipo+item_sucursal+item_numero = fact_tipo+fact_sucursal+fact_numero
+		AND fact_fecha BETWEEN @fechaInicio AND @fechaFin
+	GROUP BY prod_codigo, prod_detalle
+
+END
+
+EXEC ej7_v2 @fechaInicio = '2002-12-12', @fechaFin = '2015-12-12'
