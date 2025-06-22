@@ -28,45 +28,51 @@ GO
 CREATE PROCEDURE correccionCombos
 AS
 BEGIN
-	DECLARE @componente CHAR(8),
-		    @cantidad INT,
+	DECLARE @combo CHAR(8),
+			@cantCombo INT,
+			@cantComponentes INT,
+			@componente CHAR(8),
 			@nroFactura CHAR(8),
 			@tipoFactura CHAR(1),
 			@nroSucursal CHAR(4),
-			@precio DECIMAL(12,2),
-			@cantidad_combos INT
+			@precioComponente DECIMAL(12,2)
 	BEGIN
-		DECLARE cCombo CURSOR FOR SELECT comp_componente, 
-										 comp_cantidad, 
-										 item_numero, 
+		DECLARE cCombo CURSOR FOR SELECT comp_producto, 
+										 item_cantidad, 
+										 item_numero,
 										 item_sucursal, 
-										 item_tipo,
-										 item_precio,
-										 item_cantidad
+										 item_tipo								  
 								  FROM Composicion
 								  JOIN Item_Factura ON item_producto = comp_producto
 		OPEN cCombo
-		FETCH NEXT FROM cCombo INTO @componente, @cantidad, @nroFactura, @nroSucursal, @tipoFactura, @precio, @cantidad_combos
+		FETCH NEXT FROM cCombo INTO @combo, @cantCombo, @nroFactura, @nroSucursal, @tipoFactura
 		WHILE @@FETCH_STATUS = 0
 		BEGIN
-			INSERT INTO Item_Factura (item_tipo, item_sucursal, item_numero, item_producto, item_cantidad, item_precio)
-			VALUES (@tipoFactura, @nroSucursal, @nroFactura, @componente, @cantidad * @cantidad_combos, @precio)
-
-			IF NOT EXISTS (SELECT 1
-						   FROM Item_Factura 
-						   WHERE item_numero = @nroFactura AND item_sucursal = @nroSucursal AND item_tipo = @tipoFactura
-								AND item_producto IN (SELECT comp_producto FROM Composicion))
+			DECLARE cComp CURSOR FOR SELECT comp_componente, comp_cantidad, prod_precio
+									 FROM Composicion
+									 JOIN Producto P2 ON P2.prod_codigo = comp_componente
+									 WHERE comp_producto = @combo
+			OPEN cComp
+			FETCH NEXT FROM cComp INTO @componente, @cantComponentes, @precioComponente
+			WHILE @@FETCH_STATUS = 0
 			BEGIN
-				DELETE FROM Item_Factura
-				WHERE item_numero = @nroFactura AND item_sucursal = @nroSucursal AND item_tipo = @tipoFactura 
-			END
+				INSERT INTO Item_Factura (item_tipo, item_sucursal, item_numero, item_producto, item_cantidad, item_precio)
+				VALUES (@tipoFactura, @nroSucursal, @nroFactura, @componente, @cantCombo * @cantComponentes, @precioComponente)
 
-			FETCH NEXT FROM cCombo INTO @componente, @cantidad, @nroFactura, @nroSucursal, @tipoFactura, @precio, @cantidad_combos
-		END 
+				FETCH NEXT FROM cComp INTO @componente, @cantComponentes
+			END
+			CLOSE cComp
+			DEALLOCATE cComp
+			
+			DELETE FROM Item_Factura
+			WHERE item_tipo = @tipoFactura AND item_sucursal = @nroSucursal AND item_numero = @nroFactura
+
+		FETCH NEXT FROM cCombo INTO @combo, @cantCombo, @nroFactura, @nroSucursal, @tipoFactura
+		END
 		CLOSE cCombo
 		DEALLOCATE cCombo
 	END
-END
+END SELECT * FROM Item_Factura
 
 GO
 CREATE TRIGGER consistenciaCombos ON Item_Factura AFTER INSERT
