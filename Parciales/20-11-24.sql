@@ -33,22 +33,24 @@ BEGIN
 			@nroFactura CHAR(8),
 			@tipoFactura CHAR(1),
 			@nroSucursal CHAR(4),
-			@precio DECIMAL(12,2)
+			@precio DECIMAL(12,2),
+			@cantidad_combos INT
 	BEGIN
 		DECLARE cCombo CURSOR FOR SELECT comp_componente, 
 										 comp_cantidad, 
 										 item_numero, 
 										 item_sucursal, 
 										 item_tipo,
-										 item_precio
+										 item_precio,
+										 item_cantidad
 								  FROM Composicion
 								  JOIN Item_Factura ON item_producto = comp_producto
 		OPEN cCombo
-		FETCH NEXT FROM cCombo INTO @componente, @cantidad, @nroFactura, @nroSucursal, @tipoFactura, @precio
+		FETCH NEXT FROM cCombo INTO @componente, @cantidad, @nroFactura, @nroSucursal, @tipoFactura, @precio, @cantidad_combos
 		WHILE @@FETCH_STATUS = 0
 		BEGIN
 			INSERT INTO Item_Factura (item_tipo, item_sucursal, item_numero, item_producto, item_cantidad, item_precio)
-			VALUES (@tipoFactura, @nroSucursal, @nroFactura, @componente, @cantidad, @precio)
+			VALUES (@tipoFactura, @nroSucursal, @nroFactura, @componente, @cantidad * @cantidad_combos, @precio)
 
 			IF NOT EXISTS (SELECT 1
 						   FROM Item_Factura 
@@ -59,7 +61,7 @@ BEGIN
 				WHERE item_numero = @nroFactura AND item_sucursal = @nroSucursal AND item_tipo = @tipoFactura 
 			END
 
-			FETCH NEXT FROM cCombo INTO @componente, @cantidad, @nroFactura, @nroSucursal, @tipoFactura, @precio
+			FETCH NEXT FROM cCombo INTO @componente, @cantidad, @nroFactura, @nroSucursal, @tipoFactura, @precio, @cantidad_combos
 		END 
 		CLOSE cCombo
 		DEALLOCATE cCombo
