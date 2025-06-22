@@ -36,8 +36,8 @@ CREATE TRIGGER productosTop ON Item_Factura AFTER INSERT
 AS
 BEGIN
 	INSERT INTO topDiezProductos (prod_codigo, año)
-	SELECT YEAR(F1.fact_fecha) AS año,
-		   item_producto
+	SELECT item_producto,
+		   YEAR(F1.fact_fecha) AS año
 		   FROM Item_Factura 
 		   JOIN Factura F1 ON F1.fact_tipo = item_tipo AND F1.fact_numero = item_numero AND F1.fact_sucursal = item_sucursal
 		   WHERE item_producto IN (SELECT TOP 10 IT.item_producto
@@ -49,3 +49,6 @@ BEGIN
 		   GROUP BY YEAR(F1.fact_fecha), item_producto
 		   
 END
+
+
+		
