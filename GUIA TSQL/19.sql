@@ -8,8 +8,8 @@ ALTER FUNCTION cantidad_subordinados(@jefe VARCHAR(10))
 RETURNS INT
 AS
 BEGIN
-	DECLARE @empleado VARCHAR(10) = 0,
-			@cantidad_sub INT
+	DECLARE @empleado VARCHAR(10),
+			@cantidad_sub INT = 0
 
 	IF @jefe NOT IN (SELECT empl_jefe FROM Empleado)
 		SET @cantidad_sub = 0
